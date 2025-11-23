@@ -1,0 +1,37 @@
+[
+    {
+        "name": "Bread",
+        "purchase": "2025-11-22",
+        "expiry": "2025-11-25"
+    },
+    {
+        "name": "Milk",
+        "purchase": "2025-11-14",
+        "expiry": "2025-11-17"
+    },
+    {
+        "name": "White rice",
+        "purchase": "2025-11-22",
+        "expiry": "2026-02-20"
+    },
+    {
+        "name": "eggs",
+        "purchase": "2025-11-20",
+        "expiry": "2025-11-27"
+    },
+    {
+        "name": "Bun",
+        "purchase": "2025-11-17",
+        "expiry": "2025-11-20"
+    },
+    {
+        "name": "Apple",
+        "purchase": "2025-11-21",
+        "expiry": "2026-02-19"
+    },
+    {
+        "name": "Wheat flour",
+        "purchase": "2025-07-16",
+        "expiry": "2025-09-14"
+    }
+]

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Grocery Assistant</title>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+    // Fetch healthier substitute
+    function getSubstitute(itemName) {
+        fetch(`/substitute/${encodeURIComponent(itemName)}`)
+            .then(res => res.json())
+            .then(data => {
+                const suggestionList = document.getElementById("suggestion-list");
+                let li = document.createElement("li");
+                li.classList.add("suggestion-card");
+                li.innerHTML = data.substitute 
+                    ? `<i class="fas fa-seedling"></i> Consider replacing <b>${itemName}</b> with <b>${data.substitute}</b>.`
+                    : `<i class="fas fa-info-circle"></i> No healthier substitute found for <b>${itemName}</b>.`;
+                suggestionList.prepend(li);
+            }).catch(err => console.error(err));
+    }
+
+    // Handle Yes/No for rule-based suggestions
+    function handleSuggestion(itemName, response) {
+        fetch(`/shopping_response/${encodeURIComponent(itemName)}/${response}`)
+        .then(res => res.json())
+        .then(data => {
+            const card = document.getElementById(`suggest-${itemName}`);
+            if (card) card.remove();
+
+            if (data.added) {
+                const shoppingList = document.getElementById("shopping-list");
+                let li = document.createElement("li");
+                li.textContent = itemName;
+                shoppingList.appendChild(li);
+            }
+        }).catch(err => console.error(err));
+    }
+</script>
+
+<style>
+    body {
+        font-family:'Segoe UI',sans-serif;
+        background:linear-gradient(to right,#74ebd5,#ACB6E5);
+        min-height:100vh;
+        display:flex;
+        justify-content:center;
+        padding:20px;
+    }
+    .container {
+        background:white;
+        border-radius:20px;
+        max-width:1200px;
+        width:100%;
+        padding:20px;
+        display:flex;
+        gap:20px;
+    }
+    .left, .right { flex:1; }
+    h1 { font-size: 3em; margin-bottom: 30px; color: #4CAF50; letter-spacing: 1px; }
+    form { display:flex; justify-content:center; flex-wrap:wrap; gap:15px; margin-bottom:30px; }
+        form input[type="text"], form input[type="date"] { padding:15px; border:1px solid #ccc; border-radius:10px; width:220px; font-size:1em; transition: all 0.3s ease; }
+        form input[type="text"]:focus, form input[type="date"]:focus { border-color: #4CAF50; box-shadow: 0 0 5px rgba(76,175,80,0.5); outline:none; }
+        form button { padding:15px 25px; border:none; border-radius:10px; background-color:#4CAF50; color:white; font-size:1em; transition:all 0.3s ease; }
+        form button:hover { background-color:#45a049; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.2); }
+        ul { list-style:none; padding-left:0; }
+        li {
+            background:#f0f8ff; margin:10px 0; padding:15px 20px; border-radius:12px;
+            display:flex; justify-content:space-between; align-items:center;
+            box-shadow:0 6px 15px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s;
+        }
+        li:hover { transform:translateY(-3px); box-shadow:0 10px 20px rgba(0,0,0,0.1); }
+        li span { display:flex; align-items:center; gap:10px; font-weight:500; font-size:1.1em; }
+        li button {
+            background-color:#ff9800; padding:8px 12px; font-size:0.9em; border-radius:8px; border:none;
+            cursor:pointer; display:flex; align-items:center; gap:5px; transition: all 0.3s;
+        }
+    h2 { margin:10px 0; color:#333; }
+    ul { list-style:none; padding-left:0; }
+    li {
+        background:#f0f8ff;
+        margin:5px 0;
+        padding:10px;
+        border-radius:10px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+    }
+    .expiring-card, .rule-card {
+        padding:10px;
+        border-radius:10px;
+        margin:5px 0;
+        display:flex;
+        flex-direction:column;
+        gap:5px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    }
+    .expired { border:2px solid darkred; background:#ffb3b3; }
+    .high { border:2px solid red; background:#ffe0e0; }
+    .medium { border:2px solid orange; background:#fff4e5; }
+    button { padding:5px 10px; border:none; border-radius:5px; cursor:pointer; margin:2px; }
+    .yes-btn { background:green; color:white; }
+    .no-btn { background:red; color:white; }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <!-- LEFT PANEL -->
+    <div class="left">
+        <h2>Shopping List Suggestions</h2>
+        <div id="rule-list">
+            {% for item in rule_suggestions %}
+            <div class="rule-card" id="suggest-{{ item.name }}">
+                <span>🛒 You bought {{ item.name }} last week. Add it to shopping list?</span>
+                <div>
+                    <button class="yes-btn" onclick="handleSuggestion('{{ item.name }}','yes')">Yes</button>
+                    <button class="no-btn" onclick="handleSuggestion('{{ item.name }}','no')">No</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2>🛍️ Shopping List</h2>
+        <ul id="shopping-list">
+            {% for item in shopping_list %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right">
+        <center><h1>Smart Grocery Assistant</h1></center>
+        
+
+        <form method="POST">
+            <input type="text" name="name" placeholder="Item Name" required>
+            <input type="date" name="purchase" placeholder="Purchase Date (optional)">
+            <button type="submit">Add Item</button>
+        </form>
+
+        <h2>Your Grocery List</h2>
+        <ul>
+            {% for item in purchases %}
+            <li>
+                {{ item.name }} - Purchased: {{ item.purchase }} - Expires: {{ item.expiry }}
+                <button onclick="getSubstitute('{{ item.name }}')">Healthy Substitute</button>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2>🌿 Healthy Subsititions</h2>
+        <ul id="suggestion-list">
+            {% for item in suggestions %}
+            <li class="suggestion-card">{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+        <!--<h2>Expiring Soon / Expired 🛑</h2>-->
+        <div>
+            {% for item in expiring %}
+            <div class="expiring-card {% if item.status=='expired' %}expired{% elif item.status=='high' %}high{% else %}medium{% endif %}">
+                <strong>{% if item.status=='expired' %}❌{% else %}⚠️{% endif %} {{ item.name }}</strong>
+                <p>Purchased: {{ item.purchase }}</p>
+                <p>
+                    {% if item.status=='expired' %}
+                        Expired on: {{ item.expiry }}
+                    {% else %}
+                        Expires: {{ item.expiry }} ({{ item.days_left }} days left)
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        
+    
+</div>
+</body>
+</html>
